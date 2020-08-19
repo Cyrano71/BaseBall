@@ -1,7 +1,6 @@
 model  {  
 for (i in 1:N) {  
     Hit[i] ~ dbin(p, AtBat[i])
-    #HitPred[i] ~ dbin(p, AtBat[i])
 }  
 
 p ~ dbeta(alpha, beta)

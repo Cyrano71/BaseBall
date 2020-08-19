@@ -1,0 +1,12 @@
+model  {  
+for (i in 1:N) {  
+    Hit[i] ~ dbin(p[i], AtBat[i])
+    p[i] ~ dbeta(alpha, beta)
+}  
+
+alpha ~ dunif(10,400)
+beta ~ dunif(10,400)
+} 
+
+ 
+ 
