@@ -1,0 +1,27 @@
+model  {  
+for (i in 1:N) {  
+    Hit[i] ~ dbin(p[i], AtBat[i])
+    p[i] ~ dbeta(alpha[i], beta[i])
+     
+    alpha[i] <- max(0, min(1000, alpha0[i]))
+    beta[i] <- max(0, min(1000, beta0[i]))
+
+    alpha0[i] <- mu[i]/sigma0
+    beta0[i] <- (1-mu[i])/sigma0
+
+    mu[i] <- mu0 + muAB * log(AtBat[i])
+}  
+
+tau ~ dgamma(1.0,1.0) 
+tau0 <- max(0.1, tau)
+sigma0 <- 1 / tau0 
+
+mu0 ~ dnorm(0,taumu0) 
+taumu0 ~ dgamma(1.0,1.0) 
+muAB ~ dnorm(0,taumuAB)  
+taumuAB ~ dgamma(1.0,1.0) 
+
+} 
+
+ 
+ 

@@ -1,25 +1,4 @@
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-library(Lahman)
-library(bayestestR)
-library(dplyr)
-library(R2WinBUGS)
-bugsdir <- "C:/Program Files/WinBUGS14"
-
-career <- Batting %>%
-  filter(AB > 0) %>%
-  anti_join(Pitching, by = "playerID") %>%
-  group_by(playerID) %>%
-  summarize(H = sum(H), AB = sum(AB)) %>%
-  mutate(average = H / AB)
-
-career <- Master %>%
-  tbl_df() %>%
-  dplyr::select(playerID, nameFirst, nameLast) %>%
-  unite(name, nameFirst, nameLast, sep = " ") %>%
-  inner_join(career, by = "playerID") %>%
-  dplyr::select(-playerID)
+source("InitData.R")
 
 career_filtered <- career %>%
   filter(AB > 500)
