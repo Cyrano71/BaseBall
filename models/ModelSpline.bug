@@ -1,0 +1,65 @@
+model  {  
+for (i in 1:N) {  
+    Hit[i] ~ dbin(p[i], AtBat[i])
+    p[i] ~ dbeta(alpha[i], beta[i])
+     
+    alpha[i] <- max(0, min(1000, alpha0[i]))
+    beta[i] <- max(0, min(1000, beta0[i]))
+
+    alpha0[i] <- mu[i]/sigma0
+    beta0[i] <- (1-mu[i])/sigma0
+
+    mu[i] <- muAB * log(AtBat[i]) + muHandBoth * BatsBoth[i] + muHandLeft * BatsLeft[i] + inprod(betaX[],X[i,]) + inprod(betaZ[],Z[i,])
+}  
+
+#https://www.researchgate.net/publication/5142911_Bayesian_Analysis_for_Penalized_Spline_Regression_Using_WinBUGS
+
+#Prior distribution of the fixed effects parameters
+for (l in 1:degree+1)
+{
+  betaX[l] ~ dnorm(0,1.0E-6)
+}
+
+#Prior distributions of the random effects parameters
+for (k in 1:nknots)
+{
+  betaZ[k] ~ dnorm(0,taub)
+}
+
+taub ~ dgamma(1.0,1.0) 
+
+#Construct the design matrix of fixed effects
+for (i in 1:N)
+{
+ for (l in 1:degree+1)
+ {
+   X[i,l] <- pow(Year[i],l-1)
+ }
+}
+
+#Construct the design matrix of random effects
+for (i in 1:N)
+{
+  for (k in 1:nknots)
+  {
+     u[i,k] <- (Year[i]-knot[k])*step(Year[i]-knot[k])
+     Z[i,k] <- pow(u[i,k],degree)
+  }
+}
+
+tau ~ dgamma(1.0,1.0) 
+tau0 <- max(0.1, tau)
+sigma0 <- 1 / tau0 
+
+mu0 ~ dnorm(0,taumu0) 
+taumu0 ~ dgamma(1.0,1.0) 
+muAB ~ dnorm(0,taumuAB)  
+taumuAB ~ dgamma(1.0,1.0) 
+muHandBoth ~ dnorm(0,taumuHandBoth) 
+taumuHandBoth ~ dgamma(1.0,1.0) 
+muHandLeft ~ dnorm(0,taumuHandLeft) 
+taumuHandLeft ~ dgamma(1.0,1.0) 
+} 
+
+ 
+ 
