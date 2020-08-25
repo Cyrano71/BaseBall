@@ -18,32 +18,34 @@ for(i in 1:knot.nb){
  knot[i] <- knot.quantile[i][[1]]
 }
 
-data <- list(N = dim(career2)[1], AtBat = career2$AB, Hit = career2$H, 
+N <- dim(career2)[1]
+
+data <- list(N = N, AtBat = career2$AB, Hit = career2$H, 
 BatsLeft = leftHand, BatsBoth = bothHand, Year = career2$year,
 knot = knot, nknots= knot.nb, degree = 2)
 
-myinits <- list(list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaX = rep(0,data$degree+1), betaZ = rep(0,data$nknots)), 
-                list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaX = rep(0,data$degree+1), betaZ = rep(0,data$nknots)) 
+myinits <- list(list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaX = c(0,0), betaZ = rep(0,data$nknots)), 
+                list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaX = c(0,0), betaZ = rep(0,data$nknots)) 
 )
 
-parameters <- c("sigma0", "muAB", "muHandBoth", "muHandLeft", "betaX", "betaZ")
+parameters <- c("mu0","sigma0", "muAB", "muHandBoth", "muHandLeft", "betaX", "betaZ")
 
-model.id <- ""
+model.id <- 1
 model.name <- paste0("/models/ModelSpline",model.id,".bug") 
 model.path <- paste0(getwd(), model.name)
 
 samples <- bugs(data,parameters,inits=myinits , model.file = model.path, 
- n.chains=2,n.iter= 5000, n.burnin=500, n.thin=20, DIC=T, 
+ n.chains=2,n.iter= 6000, n.burnin=500, n.thin=10, DIC=T, 
 bugs.directory=bugsdir, codaPkg=F, debug=T)
 
-mu0 <- mean(samples$sims.list$betaX[,l])
+mu0 <- mean(samples$sims.list$mu0)
 muAB <- mean(samples$sims.list$muAB)
 muHandBoth <- mean(samples$sims.list$muHandBoth)
 muHandLeft <- mean(samples$sims.list$muHandLeft)
-sigma0 <- mean(samples$sims.list$sigma0)
+sigma <- mean(samples$sims.list$sigma0)
 
+betaX1 <- mean(samples$sims.list$betaX[,1])
 betaX2 <- mean(samples$sims.list$betaX[,2])
-betaX3 <- mean(samples$sims.list$betaX[,3])
 
 betaZ1 <- mean(samples$sims.list$betaZ[,1])
 betaZ2 <- mean(samples$sims.list$betaZ[,2])
@@ -51,11 +53,15 @@ betaZ3 <- mean(samples$sims.list$betaZ[,3])
 betaZ4 <- mean(samples$sims.list$betaZ[,4])
 betaZ5 <- mean(samples$sims.list$betaZ[,5])
 
-side <- function(bats){
+dataPlot <- list(knot = knot, nknots= knot.nb, degree = 2,
+mu0 = mu0, muAB = muAB, muHandLeft = muHandLeft, sigma = sigma,
+betaX = c(betaX1, betaX2), betaZ = c(betaZ1, betaZ2, betaZ3, betaZ4, betaZ5))
+
+ConvertHandSideStringToBool <- function(handSide){
  output <- c()
  j <- 1
- for(i in 1:length(bats)){
-   	if(bats[i] == "R"){
+ for(i in 1:length(handSide)){
+   	if(handSide[i] == "R"){
    	  output[j] <- 0
  	}
  	else {
@@ -66,22 +72,49 @@ side <- function(bats){
  return(output)
 }
 
-zfunction <- function(betaZ1, betaZ2, betaZ3, betaZ4, betaZ5){
+computeMean <- function(AB, year, handSide, data){
+  N <- length(year)
+  mu0 <- data$mu0
+  muAB <- data$muAB
+  muHandLeft <- data$muHandLeft
+  nknots <- data$nknots
+  knot <- data$knot
+  betaX <- data$betaX
+  betaZ <- data$betaZ
+  mu <- c()
+  for (i in 1:N)
+  {
+      x <- c()
+      x[1] <- 0 #betaX[1]
+      x[2] <- betaX[2] * year[i]
 
+      u <- c()
+      z <- c()
+      for (k in 1:nknots)
+      {
+	    if(year[i] - knot[k] > 0){
+                 u[k] <- year[i] - knot[k]
+                 z[k] <- betaZ[k] * u[k]^2
+           }else{
+      		     u[k] <- 0
+	           z[k] <- 0
+           }  	
+      }
 
+      mu[i] <- mu0 + muAB * log(AB[i]) + muHandLeft * handSide[i] + sum(x) + sum(z)
+   }
+
+   return(mu)
 }
 
-plot_gamlss_fit <- function(mu,sigma, knots) {
+plot_gamlss_fit <- function(dataPlot) {
   career2 %>%
     dplyr::select(year, bats) %>%
     distinct() %>%
     filter(bats != "B") %>%
-    mutate(AB = 1000, batsBool = side(bats), sigma = sigma0,
-           mu0 = mu0, muAB = muAB,muHandLeft = muHandLeft,
-           betaX2 = betaX2, betaX3 = betaX3,
-           betaZ1 = betaZ1, betaZ2 = betaZ2, betaZ3 = betaZ3, betaZ4 = betaZ4, betaZ5 = betaZ5) %>%
-    mutate(sigma = sigma,
-           mu = mu0 + muAB * log(AB) + muHandLeft * batsBool + betaX2 * year + betaX3 * year^2 + ,
+    mutate(AB = 1000, handSide = ConvertHandSideStringToBool(bats)) %>%
+    mutate(mu = computeMean(AB, year, handSide, dataPlot),
+           sigma = dataPlot$sigma,
            alpha0 = mu / sigma,
            beta0 = (1 - mu) / sigma,
            conf_low = qbeta(.025, alpha0, beta0),
@@ -94,4 +127,7 @@ plot_gamlss_fit <- function(mu,sigma, knots) {
          color = "Batting hand")
 }
 
-plot_gamlss_fit(samples$sims.list$mu, samples$sims.list$sigma0)
+debug(computeMean)
+undebug(computeMean)
+
+plot_gamlss_fit(dataPlot)

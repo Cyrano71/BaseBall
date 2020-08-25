@@ -1,4 +1,9 @@
 model  {  
+
+#https://www.researchgate.net/publication/5142911_Bayesian_Analysis_for_Penalized_Spline_Regression_Using_WinBUGS
+#https://www.jstatsoft.org/v14/i14/paper
+# m (x, θ) = β0 + β1x + Sum(uk * |x − κk|^3)
+
 for (i in 1:N) {  
     Hit[i] ~ dbin(p[i], AtBat[i])
     p[i] ~ dbeta(alpha[i], beta[i])
@@ -9,13 +14,19 @@ for (i in 1:N) {
     alpha0[i] <- mu[i]/sigma0
     beta0[i] <- (1-mu[i])/sigma0
 
-    mu[i] <- muAB * log(AtBat[i]) + muHandBoth * BatsBoth[i] + muHandLeft * BatsLeft[i] + inprod(betaX[],X[i,]) + inprod(betaZ[],Z[i,])
+    mu[i] <- mu0 + muAB * log(AtBat[i]) + muHandBoth * BatsBoth[i] + muHandLeft * BatsLeft[i] + 
+             betaX[2] * X[i,2] + 
+             inprod(betaZ[],Z[i,])
+
+	     #inprod(betaX[],X[i,]) +
+             #computation time can be 5 to 10 times longer when inprod is used   
+    	     #inprod(betaX[],X[i,]) + inprod(betaZ[],Z[i,])
+             #betaX[1] * X[i,1] + betaX[2] * X[i,2] + 
+             #betaZ[1] * Z[i,1] + betaZ[2] * Z[i,2] + betaZ[3] * Z[i,3] + betaZ[4] * Z[i,4] + betaZ[5] * Z[i,5]
 }  
 
-#https://www.researchgate.net/publication/5142911_Bayesian_Analysis_for_Penalized_Spline_Regression_Using_WinBUGS
-
 #Prior distribution of the fixed effects parameters
-for (l in 1:degree+1)
+for (l in 1:degree)
 {
   betaX[l] ~ dnorm(0,1.0E-6)
 }
@@ -26,15 +37,13 @@ for (k in 1:nknots)
   betaZ[k] ~ dnorm(0,taub)
 }
 
-taub ~ dgamma(1.0,1.0) 
+taub ~ dgamma(0.1,0.1)
 
 #Construct the design matrix of fixed effects
 for (i in 1:N)
 {
- for (l in 1:degree+1)
- {
-   X[i,l] <- pow(Year[i],l-1)
- }
+  X[i,1] <- pow(Year[i],0)
+  X[i,2] <- pow(Year[i],1)
 }
 
 #Construct the design matrix of random effects
@@ -42,7 +51,7 @@ for (i in 1:N)
 {
   for (k in 1:nknots)
   {
-     u[i,k] <- (Year[i]-knot[k])*step(Year[i]-knot[k])
+     u[i,k] <- (Year[i]-knot[k]) * step(Year[i]-knot[k])
      Z[i,k] <- pow(u[i,k],degree)
   }
 }
