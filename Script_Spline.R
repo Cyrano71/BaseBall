@@ -11,18 +11,41 @@ leftHand <- 0 + (career2$bats == "L")
 bothHand <- 0 + (career2$bats == "B")
 rightHand <- 0 + (career2$bats == "R")
 
-knot.nb <- 5
+knot.nb <- 3
 knot.quantile <- quantile(career2$year)
 knot <- c()
-for(i in 1:knot.nb){
- knot[i] <- knot.quantile[i][[1]]
-}
+knot[1] <- 1933.000
+knot[2] <- 1972.389
+knot[3] <- 1998.619
 
 N <- dim(career2)[1]
+degree <- 2
+year <- career2$year
+
+z <- matrix(numeric(),N,knot.nb)
+for (i in 1:N)
+{
+  for (k in 1:knot.nb)
+  {
+	if(year[i]-knot[k] > 0){
+	     u <- (year[i]-knot[k])
+	     z[i,k] <- u^degree
+      }else {
+	     z[i,k] <- 0
+      }
+  }
+}
+
+x <- matrix(numeric(),N,2)
+for (i in 1:N)
+{
+  x[i,1] <- year[i]^0
+  x[i,2] <- year[i]
+}
 
 data <- list(N = N, AtBat = career2$AB, Hit = career2$H, 
-BatsLeft = leftHand, BatsBoth = bothHand, Year = career2$year,
-knot = knot, nknots= knot.nb, degree = 2)
+BatsLeft = leftHand, BatsBoth = bothHand, 
+nknots= knot.nb, degree = degree, X = x, Z = z)
 
 myinits <- list(list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaX = c(0,0), betaZ = rep(0,data$nknots)), 
                 list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaX = c(0,0), betaZ = rep(0,data$nknots)) 
@@ -127,7 +150,7 @@ plot_gamlss_fit <- function(dataPlot) {
          color = "Batting hand")
 }
 
-debug(computeMean)
-undebug(computeMean)
+#debug(computeMean)
+#undebug(computeMean)
 
 plot_gamlss_fit(dataPlot)
