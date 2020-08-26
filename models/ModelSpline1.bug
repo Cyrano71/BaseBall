@@ -17,20 +17,8 @@ for (i in 1:N) {
     mu[i] <- max(0, mu1[i])
 
     mu1[i] <- mu0 + muAB * log(AtBat[i]) + muHandBoth * BatsBoth[i] + muHandLeft * BatsLeft[i] + 
-             inprod(betaX[],X[i,]) +
              inprod(betaZ[],Z[i,])
-
-#computation time can be 5 to 10 times longer when inprod is used   
-#inprod(betaX[],X[i,]) + inprod(betaZ[],Z[i,])
-#betaX[1] * X[i,1] + betaX[2] * X[i,2] + 
-#betaZ[1] * Z[i,1] + betaZ[2] * Z[i,2] + betaZ[3] * Z[i,3] + betaZ[4] * Z[i,4] + betaZ[5] * Z[i,5]
 }  
-
-#Prior distribution of the fixed effects parameters
-for (l in 1:degree)
-{
-  betaX[l] ~ dnorm(0,1.0E-6)
-}
 
 #Prior distributions of the random effects parameters
 for (k in 1:nknots)
@@ -40,7 +28,7 @@ for (k in 1:nknots)
 taub ~ dgamma(1,1)
 
 tau ~ dgamma(1.0,1.0) 
-tau0 <- max(0.1, tau)
+tau0 <- max(0.01, tau)
 sigma0 <- 1 / tau0 
 
 mu0 ~ dnorm(0,taumu0) 
