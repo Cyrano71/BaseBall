@@ -11,6 +11,9 @@ leftHand <- 0 + (career2$bats == "L")
 bothHand <- 0 + (career2$bats == "B")
 rightHand <- 0 + (career2$bats == "R")
 
+N <- dim(career2)[1]
+year <- career2$year
+
 library(splines)
 knot.nb <- 5
 spline <- ns(year, df = knot.nb)
@@ -47,7 +50,7 @@ betaZ3 <- mean(samples$sims.list$betaZ[,3])
 betaZ4 <- mean(samples$sims.list$betaZ[,4])
 betaZ5 <- mean(samples$sims.list$betaZ[,5])
 
-dataPlot <- list(knot = knot, nknots= knot.nb, degree = 2,
+dataPlot <- list(nknots= knot.nb, degree = 2,
 mu0 = mu0, muAB = muAB, muHandLeft = muHandLeft,muHandBoth=muHandBoth, sigma = sigma,
 Z = z, betaZ = c(betaZ1, betaZ2, betaZ3, betaZ4, betaZ5))
 
@@ -58,7 +61,6 @@ computeMean <- function(AB, year, bats, data){
   muHandLeft <- data$muHandLeft
   muHandBoth <- data$muHandBoth
   nknots <- data$nknots
-  knot <- data$knot
   betaZ <- data$betaZ
   Z <- data$Z
   mu <- c()
@@ -95,6 +97,7 @@ plot_gamlss_fit <- function(dataPlot) {
            beta0 = (1 - mu) / sigma,
            conf_low = qbeta(.025, alpha0, beta0),
            conf_high = qbeta(.975, alpha0, beta0)) %>%
+    filter(bats != "B") %>%
     ggplot(aes(year, mu, color = bats, group = bats)) +
     geom_line() +
     geom_ribbon(aes(ymin = conf_low, ymax = conf_high), linetype = 2, alpha = .1) +

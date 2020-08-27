@@ -1,0 +1,56 @@
+model  {  
+
+#https://www.researchgate.net/publication/5142911_Bayesian_Analysis_for_Penalized_Spline_Regression_Using_WinBUGS
+#https://www.jstatsoft.org/v14/i14/paper
+#m(x, θ) = β0 + β1x + Sum(uk * |x − κk|^3)
+
+for (i in 1:N) {  
+    Hit[i] ~ dbin(p[i], AtBat[i])
+    p[i] ~ dbeta(alpha[i], beta[i])
+     
+    alpha[i] <- max(0, min(1000, alpha0[i]))
+    beta[i] <- max(0, min(1000, beta0[i]))
+
+    alpha0[i] <- mu[i]/sigma0
+    beta0[i] <- (1-mu[i])/sigma0
+
+    mu[i] <- max(0, mu1[i])
+
+    mu1[i] <- mu0 + muAB * log(AtBat[i]) + muHandBoth * BatsBoth[i] + muHandLeft * BatsLeft[i] + 
+             inprod(betaZ[],Z[i,]) + inprod(betaZB[],Z[i,]) * BatsBoth[i] + inprod(betaZL[],Z[i,]) * BatsLeft[i]
+}  
+
+for (k in 1:nknots)
+{
+  betaZ[k] ~ dnorm(0,taub)
+}
+taub ~ dgamma(1,1)
+
+for (k in 1:nknots)
+{
+  betaZL[k] ~ dnorm(0,taubl)
+}
+taubl ~ dgamma(1,1)
+
+for (k in 1:nknots)
+{
+  betaZB[k] ~ dnorm(0,taubb)
+}
+taubb ~ dgamma(1,1)
+
+tau ~ dgamma(1.0,1.0) 
+tau0 <- max(0.0001, tau)
+sigma0 <- 1 / tau0 
+
+mu0 ~ dnorm(0,taumu0) 
+taumu0 ~ dgamma(1.0,1.0) 
+muAB ~ dnorm(0,taumuAB)  
+taumuAB ~ dgamma(1.0,1.0) 
+muHandBoth ~ dnorm(0,taumuHandBoth) 
+taumuHandBoth ~ dgamma(1.0,1.0) 
+muHandLeft ~ dnorm(0,taumuHandLeft) 
+taumuHandLeft ~ dgamma(1.0,1.0) 
+} 
+
+ 
+ 
