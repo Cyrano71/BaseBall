@@ -50,25 +50,28 @@ betaZ3 <- mean(samples$sims.list$betaZ[,3])
 betaZ4 <- mean(samples$sims.list$betaZ[,4])
 betaZ5 <- mean(samples$sims.list$betaZ[,5])
 
-dataPlot <- list(nknots= knot.nb, degree = 2,
+dataPlot <- list(nknots= knot.nb, degree = 2,refyears = year,
 mu0 = mu0, muAB = muAB, muHandLeft = muHandLeft,muHandBoth=muHandBoth, sigma = sigma,
 Z = z, betaZ = c(betaZ1, betaZ2, betaZ3, betaZ4, betaZ5))
 
-computeMean <- function(AB, year, bats, data){
-  N <- length(year)
-  mu0 <- data$mu0
-  muAB <- data$muAB
-  muHandLeft <- data$muHandLeft
-  muHandBoth <- data$muHandBoth
-  nknots <- data$nknots
-  betaZ <- data$betaZ
-  Z <- data$Z
+computeMean <- function(AB, years, bats, df){
+  N <- length(years)
+  mu0 <- df$mu0
+  muAB <- df$muAB
+  muHandLeft <- df$muHandLeft
+  muHandBoth <- df$muHandBoth
+  nknots <- df$nknots
+  betaZ <- df$betaZ
+  Zref <- df$Z
+  yearsRef <- df$refyears
   mu <- c()
   for (i in 1:N)
   { 
+      index <- which(yearsRef == years[i])
+      Zi <- Zref[index[1],]
       z <- c()
       for(k in 1:nknots){
-          z[k] <- betaZ[k] * Z[i,k]
+          z[k] <- betaZ[k] * Zi[k]
       }
 
 	handSideLeft <- 0
@@ -87,10 +90,10 @@ computeMean <- function(AB, year, bats, data){
    return(mu)
 }
 
-plot_gamlss_fit <- function(dataPlot) {
-  career2 %>%
+build_df <- function(AB, dataPlot){
+    df <- career2 %>%
     dplyr::select(year, bats) %>%
-    mutate(AB = 1000) %>%
+    mutate(AB = AB) %>%
     mutate(mu = computeMean(AB, year, bats, dataPlot),
            sigma = dataPlot$sigma,
            alpha0 = mu / sigma,
@@ -98,6 +101,13 @@ plot_gamlss_fit <- function(dataPlot) {
            conf_low = qbeta(.025, alpha0, beta0),
            conf_high = qbeta(.975, alpha0, beta0)) %>%
     filter(bats != "B") %>%
+    distinct() %>% arrange(year, bats)
+
+    return (df)
+}
+
+plot_gamlss_fit <- function(df) { 
+    df %>%
     ggplot(aes(year, mu, color = bats, group = bats)) +
     geom_line() +
     geom_ribbon(aes(ymin = conf_low, ymax = conf_high), linetype = 2, alpha = .1) +
@@ -109,8 +119,29 @@ plot_gamlss_fit <- function(dataPlot) {
 #debug(computeMean)
 #undebug(computeMean)
 
-plot_gamlss_fit(dataPlot)
+df <- build_df(1000, dataPlot)
+plot_gamlss_fit(df)
 
+#Posterior Distribution 
+players <- crossing(year = c(1915, 1965, 2015),
+                    bats = c("L", "R"),
+                    H = 30,
+                    AB = 100)
 
+players_posterior <- players  %>%
+mutate(mu = computeMean(AB, year, bats, dataPlot),
+           sigma = dataPlot$sigma,
+           alpha0 = mu / sigma,
+           beta0 = (1 - mu) / sigma,
+           alpha1 = alpha0 + H,
+           beta1 = beta0 + AB - H)
 
- 
+players_posterior %>%
+  crossing(x = seq(.15, .3, .001)) %>%
+  mutate(density = dbeta(x, alpha1, beta1)) %>%
+  ggplot(aes(x, density, color = bats)) +
+  geom_line() +
+  facet_wrap(~ year) +
+  xlab("Batting average") +
+  ylab("Posterior density")
+
