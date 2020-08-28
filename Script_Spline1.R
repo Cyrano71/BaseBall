@@ -50,7 +50,7 @@ betaZ3 <- mean(samples$sims.list$betaZ[,3])
 betaZ4 <- mean(samples$sims.list$betaZ[,4])
 betaZ5 <- mean(samples$sims.list$betaZ[,5])
 
-dataPlot <- list(nknots= knot.nb, degree = 2,refyears = year,
+dataPlot <- list(nknots= knot.nb, degree = 2, refyears = year,
 mu0 = mu0, muAB = muAB, muHandLeft = muHandLeft,muHandBoth=muHandBoth, sigma = sigma,
 Z = z, betaZ = c(betaZ1, betaZ2, betaZ3, betaZ4, betaZ5))
 

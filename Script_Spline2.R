@@ -64,7 +64,7 @@ betaZL3 <- mean(samples$sims.list$betaZL[,3])
 betaZL4 <- mean(samples$sims.list$betaZL[,4])
 betaZL5 <- mean(samples$sims.list$betaZL[,5])
 
-dataPlot <- list(nknots= knot.nb, degree = 2,
+dataPlot <- list(nknots= knot.nb, degree = 2, refyears = year,
 mu0 = mu0, muAB = muAB, muHandLeft = muHandLeft,muHandBoth=muHandBoth, sigma = sigma,
 Z = z, 
 betaZ = c(betaZ1, betaZ2, betaZ3, betaZ4, betaZ5),
@@ -81,17 +81,20 @@ computeMean <- function(AB, year, bats, data){
   betaZB <- data$betaZB
   betaZL <- data$betaZL
   betaZ <- data$betaZ
-  Z <- data$Z
+  Zref <- data$Z
+  yearsRef <- data$refyears
   mu <- c()
   for (i in 1:N)
   { 
+      index <- which(yearsRef == year[i])
+      Zi <- Zref[index[1],]
       z <- c()
       zl <- c()
       zb <- c()
       for(k in 1:nknots){
-          z[k] <- betaZ[k] * Z[i,k]
-          zl[k] <- betaZL[k] * Z[i,k]
-          zb[k] <- betaZB[k] * Z[i,k]
+          z[k] <- betaZ[k] * Zi[k]
+          zl[k] <- betaZL[k] * Zi[k]
+          zb[k] <- betaZB[k] * Zi[k]
       }
 
       handSideLeft <- 0
@@ -134,6 +137,27 @@ plot_gamlss_fit <- function(dataPlot) {
 
 plot_gamlss_fit(dataPlot)
 
+#Posterior Distribution 
+players <- crossing(year = c(1915, 1965, 2015),
+                    bats = c("L", "R"),
+                    H = 30,
+                    AB = 100)
 
+players_posterior <- players  %>%
+mutate(mu = computeMean(AB, year, bats, dataPlot),
+           sigma = dataPlot$sigma,
+           alpha0 = mu / sigma,
+           beta0 = (1 - mu) / sigma,
+           alpha1 = alpha0 + H,
+           beta1 = beta0 + AB - H)
+
+players_posterior %>%
+  crossing(x = seq(.15, .3, .001)) %>%
+  mutate(density = dbeta(x, alpha1, beta1)) %>%
+  ggplot(aes(x, density, color = bats)) +
+  geom_line() +
+  facet_wrap(~ year) +
+  xlab("Batting average") +
+  ylab("Posterior density")
 
  
