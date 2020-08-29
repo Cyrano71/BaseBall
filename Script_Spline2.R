@@ -159,5 +159,6 @@ players_posterior %>%
   facet_wrap(~ year) +
   xlab("Batting average") +
   ylab("Posterior density")
+dbeta(1000,12.1,43.3)
 
  

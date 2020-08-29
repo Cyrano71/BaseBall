@@ -1,0 +1,28 @@
+# Exam Scores With Individual Differences
+model{
+
+  # Rates Given By Each Person's Group Assignment
+  for (i in 1:N){
+    p[i] <- equals(z[i],0) * nonpitcher[i] + equals(z[i],1) * pitcher[i]
+    Hit[i] ~ dbin(p[i], AtBat[i])
+  }
+
+  # Each Person Belongs To One Of Two Latent Groups
+  for (i in 1:N){
+    z[i] ~ dbern(0.5)
+  }
+
+  for (i in 1:N){
+    nonpitcher[i] ~ dbeta(alpha_nonpitcher, beta_nonpitcher)
+  } 
+
+  for (i in 1:N){
+    pitcher[i] ~ dbeta(alpha_pitcher, beta_pitcher)
+  }
+
+  alpha_nonpitcher ~ dunif(1,1000)  
+  beta_nonpitcher ~ dunif(1,1000)  
+
+  alpha_pitcher ~ dunif(0, alpha_nonpitcher)  
+  beta_pitcher  ~ dunif(0, beta_nonpitcher)  
+}
