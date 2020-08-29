@@ -24,8 +24,8 @@ data <- list(N = N, AtBat = career2$AB, Hit = career2$H,
              BatsLeft = leftHand, BatsBoth = bothHand, 
              nknots= knot.nb, Z = z)
 
-myinits <- list(list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaZ = rep(0,data$nknots)), 
-                list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0, betaZ = rep(0,data$nknots)) 
+myinits <- list(list(mu0 = 0.1, muAB = 0.01, muHandBoth = 0, muHandLeft = 0.01, betaZ = rep(0,data$nknots)), 
+                list(mu0 = 0.1, muAB = 0.01, muHandBoth = 0, muHandLeft = 0.01, betaZ = rep(0,data$nknots)) 
 )
 
 parameters <- c("mu0","sigma0", "muAB", "muHandBoth", "muHandLeft", "betaZ")

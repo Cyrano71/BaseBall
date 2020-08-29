@@ -14,13 +14,12 @@ rightHand <- 0 + (career2$bats == "R")
 data <- list(N = dim(career2)[1], AtBat = career2$AB, Hit = career2$H, 
 BatsLeft = leftHand, BatsBoth = bothHand)
 
-myinits <- list(list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0), 
-                list(mu0 = 0.14, muAB = 0.0153, muHandBoth = 0, muHandLeft = 0)) 
+myinits <- list(list(mu0 = 0.1, muAB = 0.01, muHandBoth = 0, muHandLeft = 0.01), 
+                list(mu0 = 0.1, muAB = 0.01, muHandBoth = 0, muHandLeft = 0.01)) 
 
 parameters <- c("mu0","muAB","sigma0","muHandBoth","muHandLeft")
 
-model.id <- ""
-model.name <- paste0("/models/ModelHierarchical",model.id,".bug") 
+model.name <- paste0("/models/ModelHierarchical",".bug") 
 model.path <- paste0(getwd(), model.name)
 
 samples <- bugs(data,parameters,inits=myinits , model.file = model.path, 

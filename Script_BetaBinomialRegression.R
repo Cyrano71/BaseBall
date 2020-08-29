@@ -5,13 +5,12 @@ career_filtered <- career %>%
 
 data <- list(N = dim(career_filtered)[1], AtBat = career_filtered$AB, Hit = career_filtered$H)
 
-myinits <- list(list(mu0 = 0.14, muAB = 0.0153), 
-                list(mu0 = 0.14, muAB = 0.0153)) 
+myinits <- list(list(mu0 = 0.1, muAB = 0.01), 
+                list(mu0 = 0.1, muAB = 0.01)) 
 
 parameters <- c("mu0","muAB","sigma0")
 
-model.id <- ""
-model.name <- paste0("/models/ModelBetaBinomialRegression",model.id,".bug") 
+model.name <- paste0("/models/ModelBetaBinomialRegression",".bug") 
 model.path <- paste0(getwd(), model.name)
 
 samples <- bugs(data,parameters,inits=myinits , model.file = model.path, 
