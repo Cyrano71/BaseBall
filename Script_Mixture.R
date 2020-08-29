@@ -71,3 +71,32 @@ final_parameters %>%
   geom_text(aes(x = H, y = 0, label = name), data = batter_100, hjust = 1, vjust = 1, angle = 270) +
   labs(x = "H (out of 100 at-bats)",
        y = "(Likelihood if pitcher) / (Likelihood if pitcher + Likelihood if not)")
+
+career_likelihoods <- career %>%
+  filter(AB > 20) %>%
+  crossing(final_parameters) %>%
+  mutate(likelihood = VGAM::dbetabinom.ab(H, AB, alpha, beta)) %>%
+  group_by(playerID) %>%
+  mutate(posterior = likelihood / sum(likelihood))
+career_assignments <- career_likelihoods %>%
+  top_n(1, posterior) %>%
+  ungroup()
+
+batting_data <- career_likelihoods %>%
+  ungroup() %>%
+  filter(AB == 100) %>%
+  mutate(name = paste0(name, " (", H, "/", AB, ")"),
+         name = reorder(name, H),
+         alpha1 = H + alpha,
+         beta1 = AB - H + beta)
+batting_data %>%
+  crossing(x = seq(0, .4, .001)) %>%
+  mutate(posterior_density = posterior * dbeta(x, alpha1, beta1)) %>%
+  group_by(name, x) %>%
+  summarize(posterior_density = sum(posterior_density)) %>%
+  ggplot(aes(x, posterior_density, color = name)) +
+  geom_line(show.legend = FALSE) +
+  geom_vline(aes(xintercept = average), data = batting_data, lty = 2) +
+  facet_wrap(~ name) +
+  labs(x = "Batting average (actual average shown as dashed line)",
+       y = "Posterior density after updating")
