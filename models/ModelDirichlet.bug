@@ -1,0 +1,17 @@
+# Exam Scores With Individual Differences
+model{
+
+  for (i in 1:N){
+    HitTypes[i,1:5] ~ dmulti(p[i,1:5],AtBat[i]);
+
+    for (k in 1:K) {
+      p[i, k] <- delta[i, k] / sum(delta[i,])
+      delta[i, k] ~ dgamma(alpha[k], 1)
+    }
+  }
+
+  for (k in 1:K) {
+        alpha[k] ~  dunif(1,2500)
+  }
+
+}
